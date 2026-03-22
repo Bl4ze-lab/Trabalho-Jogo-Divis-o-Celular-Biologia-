@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Divisão Celular</title>
+
+<style>
+body{
+  margin:0;
+  font-family: Arial;
+  color:white;
+  text-align:center;
+  background: linear-gradient(#0f172a,#020617);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.hidden{display:none;}
+
+.container{width:100%;max-width:400px;}
+
+.box{
+  background:#1e293b;
+  padding:20px;
+  border-radius:15px;
+  box-shadow:0 0 20px #38bdf8;
+}
+
+button{
+  padding:10px;
+  margin:6px 0;
+  border:none;
+  border-radius:10px;
+  background:#22c55e;
+  color:white;
+  cursor:pointer;
+  width:100%;
+  transition:0.3s;
+}
+
+button:hover{transform:scale(1.05);}
+
+.correct{background:#0AA7C8 !important;}
+.wrong{background:#dc2626 !important;}
+
+img{
+  width:120px;
+  margin:10px;
+}
+
+.nav{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+.nav button{width:auto;}
+
+.barra{
+  height:10px;
+  background:#334155;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:10px;
+}
+
+.progresso{
+  height:100%;
+  width:0%;
+  background:#22c55e;
+}
+
+
+.confete{
+  position:fixed;
+  width:8px;
+  height:8px;
+  top:-10px;
+  animation:fall linear forwards;
+}
+
+@keyframes fall{
+  to{
+    transform:translateY(100vh) rotate(360deg);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+
+<div id="menu">
+  <h1>🧬 Divisão Celular</h1>
+  <button onclick="iniciar()">▶️ Jogar</button>
+  <p id="ultimo"></p>
+  <h3>By:Enzo (Bl4ze)</h3>
+</div>
+
+
+<div id="jogo" class="hidden">
+
+<div class="barra">
+  <div id="barra" class="progresso"></div>
+</div>
+
+<img id="img">
+
+<div class="box">
+  <div id="pergunta"></div>
+  <div id="respostas"></div>
+  <div id="feedback"></div>
+  <div id="score"></div>
+
+  <div class="nav">
+    <button onclick="anterior()">⬅️</button>
+    <button onclick="resetar()">🔄</button>
+    <button onclick="proxima()">➡️</button>
+  </div>
+</div>
+
+</div>
+
+
+<div id="final" class="hidden">
+  <h1>🏆 Resultado Final</h1>
+  <h2 id="resultado"></h2>
+  <p id="rankFinal"></p>
+  <button onclick="reiniciarJogo()">🔁 Jogar novamente</button>
+</div>
+
+</div>
+
+<audio id="acerto" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
+<audio id="erro" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+
+<script>
+
+let perguntas=[
+{q:"O que é G1?",r:["Crescimento da célula","Divisão da célula","Morte da célula"],c:0,img:"img/G1.jpg"},
+{q:"O que a Fase S faz?",r:["Duplica o DNA","Divide a célula","Respira"],c:0,img:"img/S.jpg"},
+{q:"G2 faz a?",r:["Preparação da célula","Energia da célula","Separação da célula"],c:0,img:"img/G2.jpg"},
+{q:"A Prófase?",r:[" Faz os cromossomos aparecerem","Divide a célula","Alinha a célula"],c:0,img:"img/Profase.jpg"},
+{q:"A Metáfase?",r:["Faz o alinhamento da célula","Faz a separação da célula","Faz o crescimento da célula"],c:0,img:"img/Metafase.jpg"},
+{q:"A Anáfase?",r:["Faz a separação da célula","Faz o alinhamento da célula","Faz a duplicação da célula"],c:0,img:"img/Anafase.jpg"},
+{q:"A Telófase?",r:["Forma núcleos","Divide a célula","Alinha a célula"],c:0,img:"img/Telofase.jpg"},
+{q:"A Citocinese?",r:["Divide a célula","Duplica a célula","Alinha a célula"],c:0,img:"img/Citocinese.jpg"},
+{q:"Na Meiose são?",r:["4 diferentes","2 iguais","1 célula"],c:0,img:"img/Meiose.gif"},
+{q:"No Crossing Over acontece?",r:["Troca genética","Divisão da célula","Energia da célula"],c:0,img:"img/CrossingOver.jpeg"}
+];
+
+let i=0, acertos=0;
+let respd=new Array(perguntas.length).fill(null);
+
+function embaralhar(a){return a.sort(()=>Math.random()-0.5);}
+
+function iniciar(){
+  menu.classList.add("hidden");
+  jogo.classList.remove("hidden");
+  mostrar();
+}
+
+function mostrar(){
+  let p=perguntas[i];
+  let respostas=embaralhar([...p.r]);
+
+  pergunta.innerHTML="<h3>"+p.q+"</h3>";
+  img.src=p.img;
+
+  let html="";
+  respostas.forEach(r=>{
+    html+=`<button onclick="responder(this,'${r}')">${r}</button>`;
+  });
+
+  respostasDiv= document.getElementById("respostas");
+  respostasDiv.innerHTML=html;
+
+  feedback.innerText="";
+  p.correta=p.r[p.c];
+  atualizar();
+}
+
+function responder(btn,res){
+  let p=perguntas[i];
+
+  if(respd[i]==null){
+    let botoes=document.querySelectorAll("#respostas button");
+
+    botoes.forEach(b=>b.disabled=true);
+
+    if(res===p.correta){
+      acertos++;
+      acerto.play();
+      btn.classList.add("correct");
+      feedback.innerText="✅ Certo!";
+      confete();
+    }else{
+      erro.play();
+      btn.classList.add("wrong");
+      feedback.innerText="❌ "+p.correta;
+
+      botoes.forEach(b=>{
+        if(b.innerText===p.correta){
+          b.classList.add("correct");
+        }
+      });
+    }
+
+    respd[i]=res;
+  }
+
+  atualizar();
+
+  if(respd.every(x=>x!=null)){
+    setTimeout(finalizar,800);
+  }
+}
+
+function atualizar(){
+  score.innerText=`Acertos: ${acertos}/${perguntas.length}`;
+  barra.style.width=(respd.filter(x=>x!=null).length/perguntas.length*100)+"%";
+}
+
+function proxima(){ if(i<perguntas.length-1){i++;mostrar();}}
+function anterior(){ if(i>0){i--;mostrar();}}
+
+function finalizar(){
+  localStorage.setItem("pontuacao",acertos);
+  jogo.classList.add("hidden");
+  final.classList.remove("hidden");
+
+  resultado.innerText=`${acertos}/${perguntas.length}`;
+
+  let p=(acertos/perguntas.length)*100;
+  rankFinal.innerText=
+    p===100?"🏆 S":
+    p>=70?"🥇 A":
+    p>=50?"🥈 B":"🥉 C";
+}
+
+function reiniciarJogo(){
+  i=0;
+  acertos=0;
+  respd=new Array(perguntas.length).fill(null);
+
+  final.classList.add("hidden");
+  menu.classList.remove("hidden");
+}
+
+function resetar(){
+  i=0;
+  acertos=0;
+  respd=new Array(perguntas.length).fill(null);
+  barra.style.width="0%";
+  mostrar();
+}
+
+function confete(){
+  for(let i=0;i<30;i++){
+    let c=document.createElement("div");
+    c.classList.add("confete");
+    c.style.left=Math.random()*100+"vw";
+    c.style.background=`hsl(${Math.random()*360},100%,50%)`;
+    c.style.animationDuration=(Math.random()*2+1)+"s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),2000);
+  }
+}
+
+let ult=localStorage.getItem("pontuacao");
+if(ult) ultimo.innerText="Última: "+ult;
+
+</script>
+
+</body>
+</html>
